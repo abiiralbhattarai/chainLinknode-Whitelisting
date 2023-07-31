@@ -5,11 +5,13 @@ import "@nomicfoundation/hardhat-toolbox";
 import "@openzeppelin/hardhat-upgrades";
 import "@typechain/hardhat";
 
+
 import * as dotenv from "dotenv";
 
 dotenv.config();
 const PRIVATE_KEY = process.env.PRIVATE_KEY;
 const SEPOLIA_RPC_URL = process.env.SEPOLIA_RPC_URL;
+const ETHERSCAN_API = process.env.ETHERSCAN_API;
 
 const config: HardhatUserConfig = {
   solidity: {
@@ -39,7 +41,11 @@ const config: HardhatUserConfig = {
       gas: 2100000,
       gasPrice: 8000000000,
     },
+
   },
+  etherscan: {
+    apiKey: ETHERSCAN_API
+  }
 };
 
 export default config;

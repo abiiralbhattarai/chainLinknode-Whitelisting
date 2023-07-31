@@ -5,13 +5,14 @@ const linkTokenAddress = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
 async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Contract Deployer Address:", await deployer.getAddress());
+  const deployerAddress = await deployer.getAddress();
   const operatorFactory = await ethers.getContractFactory("Operator");
 
   const operatorContractDeploy: any = await upgrades.deployProxy(
     operatorFactory,
     [
-      "0x779877A7B0D9E8603169DdbD7836e478b4624789",
-      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+      linkTokenAddress,
+      deployerAddress,
     ],
     {
       initializer: "__Operator_init",
