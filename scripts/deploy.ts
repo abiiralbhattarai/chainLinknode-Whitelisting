@@ -1,22 +1,26 @@
-import { ethers } from "hardhat";
+import { ethers, upgrades } from "hardhat";
+
+const linkTokenAddress = "0x779877A7B0D9E8603169DdbD7836e478b4624789";
 
 async function main() {
-  const currentTimestampInSeconds = Math.round(Date.now() / 1000);
-  const unlockTime = currentTimestampInSeconds + 60;
+  const [deployer] = await ethers.getSigners();
+  console.log("Contract Deployer Address:", await deployer.getAddress());
+  const operatorFactory = await ethers.getContractFactory("Operator");
 
-  const lockedAmount = ethers.parseEther("0.001");
-
-  const lock = await ethers.deployContract("Lock", [unlockTime], {
-    value: lockedAmount,
-  });
-
-  await lock.waitForDeployment();
-
-  console.log(
-    `Lock with ${ethers.formatEther(
-      lockedAmount
-    )}ETH and unlock timestamp ${unlockTime} deployed to ${lock.target}`
+  const operatorContractDeploy: any = await upgrades.deployProxy(
+    operatorFactory,
+    [
+      "0x779877A7B0D9E8603169DdbD7836e478b4624789",
+      "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+    ],
+    {
+      initializer: "__Operator_init",
+    }
   );
+
+  await operatorContractDeploy.waitForDeployment();
+  const deployedAddress: any = await operatorContractDeploy.getAddress();
+  console.log(`Operator Contract Address:${deployedAddress}`);
 }
 
 // We recommend this pattern to be able to use async/await everywhere
