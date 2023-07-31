@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.18;
+
+import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 
 import "./interfaces/OwnableInterface.sol";
 
@@ -7,14 +9,24 @@ import "./interfaces/OwnableInterface.sol";
  * @title The ConfirmedOwner contract
  * @notice A contract with helpers for basic contract ownership.
  */
-contract ConfirmedOwnerWithProposal is OwnableInterface {
+contract ConfirmedOwnerWithProposal is OwnableInterface, Initializable {
     address private s_owner;
     address private s_pendingOwner;
 
     event OwnershipTransferRequested(address indexed from, address indexed to);
     event OwnershipTransferred(address indexed from, address indexed to);
 
-    constructor(address newOwner, address pendingOwner) {
+    function __ConfirmedOwnerWithProposal_init(
+        address newOwner,
+        address pendingOwner
+    ) internal onlyInitializing {
+        __ConfirmedOwnerWithProposal_init_unchained(newOwner, pendingOwner);
+    }
+
+    function __ConfirmedOwnerWithProposal_init_unchained(
+        address newOwner,
+        address pendingOwner
+    ) internal onlyInitializing {
         require(newOwner != address(0), "Cannot set owner to zero");
 
         s_owner = newOwner;
@@ -76,4 +88,10 @@ contract ConfirmedOwnerWithProposal is OwnableInterface {
         _validateOwnership();
         _;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     */
+    uint256[49] private __gap;
 }

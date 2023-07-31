@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.18;
 
 import "./AuthorizedReceiver.sol";
 import "./AuthorizedRequester.sol";
@@ -10,7 +10,6 @@ import "./interfaces/OperatorInterface.sol";
 import "./interfaces/OwnableInterface.sol";
 import "./interfaces/WithdrawalInterface.sol";
 import "./vendor/Address.sol";
-import "./vendor/SafeMathChainlink.sol";
 
 /**
  * @title The Chainlink Operator contract
@@ -25,7 +24,6 @@ contract Operator is
     WithdrawalInterface
 {
     using Address for address;
-    using SafeMathChainlink for uint256;
 
     struct Commitment {
         bytes31 paramsHash;
@@ -49,7 +47,7 @@ contract Operator is
     bytes4 private constant OPERATOR_REQUEST_SELECTOR =
         this.operatorRequest.selector;
 
-    LinkTokenInterface internal immutable linkToken;
+    LinkTokenInterface internal linkToken;
     mapping(bytes32 => Commitment) private s_commitments;
     mapping(address => bool) private s_owned;
     // Tokens sent for requests that have not been fulfilled yet
@@ -83,10 +81,22 @@ contract Operator is
      * @notice Deploy with the address of the LINK token
      * @dev Sets the LinkToken address for the imported LinkTokenInterface
      * @param link The address of the LINK token
-     * @param owner The address of the owner
+     * @param theOwner The address of the owner
      */
-    constructor(address link, address owner) ConfirmedOwner(owner) {
-        linkToken = LinkTokenInterface(link); // external but already deployed and unalterable
+
+    function __Operator_init(
+        address link,
+        address theOwner
+    ) public initializer {
+        __Operator_init_unchained(link, theOwner);
+    }
+
+    function __Operator_init_unchained(
+        address link,
+        address theOwner
+    ) internal onlyInitializing {
+        linkToken = LinkTokenInterface(link);
+        __ConfirmedOwner_init(theOwner);
     }
 
     /**
@@ -338,7 +348,7 @@ contract Operator is
         address[] calldata targets,
         address[] calldata senders
     ) public validateAuthorizedSenderSetter {
-        TargetsUpdatedAuthorizedSenders(targets, senders, msg.sender);
+        emit TargetsUpdatedAuthorizedSenders(targets, senders, msg.sender);
 
         for (uint256 i = 0; i < targets.length; i++) {
             AuthorizedReceiverInterface(targets[i]).setAuthorizedSenders(
@@ -356,7 +366,7 @@ contract Operator is
         address[] calldata targets,
         address[] calldata requesters
     ) public validateAuthorizedRequesterSetter {
-        TargetsUpdatedAuthorizedSenders(targets, requesters, msg.sender);
+        emit TargetsUpdatedAuthorizedSenders(targets, requesters, msg.sender);
 
         for (uint256 i = 0; i < targets.length; i++) {
             AuthorizedReceiverInterface(targets[i]).setAuthorizedSenders(
@@ -469,7 +479,7 @@ contract Operator is
         uint256 valueRemaining = msg.value;
         for (uint256 i = 0; i < receivers.length; i++) {
             uint256 sendAmount = amounts[i];
-            valueRemaining = valueRemaining.sub(sendAmount);
+            valueRemaining = valueRemaining - sendAmount;
             receivers[i].transfer(sendAmount);
         }
         require(valueRemaining == 0, "Too much ETH sent");
@@ -600,7 +610,7 @@ contract Operator is
             "Must use a unique ID"
         );
         // solhint-disable-next-line not-rely-on-time
-        expiration = block.timestamp.add(getExpiryTime);
+        expiration = block.timestamp + getExpiryTime;
         bytes31 paramsHash = _buildParamsHash(
             payment,
             callbackAddress,
@@ -611,7 +621,7 @@ contract Operator is
             paramsHash,
             _safeCastToUint8(dataVersion)
         );
-        s_tokensInEscrow = s_tokensInEscrow.add(payment);
+        s_tokensInEscrow = s_tokensInEscrow + payment;
         return (requestId, expiration);
     }
 
@@ -646,7 +656,7 @@ contract Operator is
                 _safeCastToUint8(dataVersion),
             "Data versions must match"
         );
-        s_tokensInEscrow = s_tokensInEscrow.sub(payment);
+        s_tokensInEscrow = s_tokensInEscrow - payment;
         delete s_commitments[requestId];
     }
 
@@ -692,8 +702,8 @@ contract Operator is
      * @return uint256 LINK tokens available
      */
     function _fundsAvailable() private view returns (uint256) {
-        uint256 inEscrow = s_tokensInEscrow.sub(ONE_FOR_CONSISTENT_GAS_COST);
-        return linkToken.balanceOf(address(this)).sub(inEscrow);
+        uint256 inEscrow = s_tokensInEscrow + ONE_FOR_CONSISTENT_GAS_COST;
+        return linkToken.balanceOf(address(this)) - inEscrow;
     }
 
     /**
@@ -777,4 +787,10 @@ contract Operator is
         require(!s_owned[callbackAddress], "Cannot call owned contract");
         _;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     */
+    uint256[49] private __gap;
 }

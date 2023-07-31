@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.7.0;
+pragma solidity ^0.8.18;
 
 import "./interfaces/AuthorizedRequesterInterface.sol";
 
@@ -68,4 +68,10 @@ abstract contract AuthorizedRequester is AuthorizedRequesterInterface {
         );
         _;
     }
+
+    /**
+     * @dev This empty reserved space is put in place to allow future versions to add new
+     * variables without shifting down storage in the inheritance chain.
+     */
+    uint256[49] private __gap;
 }
