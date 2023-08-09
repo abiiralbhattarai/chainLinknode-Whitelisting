@@ -1,3 +1,3 @@
 # Chainlink Operator contract
 
-- Feature of whitelisting requesters
+- Feature of whitelisting requesters in Chainlink Node
